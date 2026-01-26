@@ -123,11 +123,20 @@ def znajdz_wiersze_sumy(df_sap):
     for idx, row in df_sap.iterrows():
         ref = str(row[KOLUMNA_REFERENCJA]) if pd.notna(row[KOLUMNA_REFERENCJA]) else ""
         
+        # Usuń białe znaki
+        ref = ref.strip()
+        
         if len(ref) < 10:
             continue
         
-        kod = ref[:10]
+        # Pobierz pierwsze 10 znaków i upewnij się że nie ma białych znaków
+        kod = ref[:10].strip()
         
+        # Debug - pokaż co znalazło
+        if any(dozwolony in kod for dozwolony in DOZWOLONE_KODY_KOLEJNOSC):
+            print(f"   🔍 Znaleziono potencjalny kod: '{kod}' (długość: {len(kod)})")
+        
+        # Sprawdź dokładne dopasowanie
         if kod not in DOZWOLONE_KODY_KOLEJNOSC:
             continue
         
@@ -156,7 +165,7 @@ def znajdz_wiersze_sumy(df_sap):
             print(f"   ⚠️ {kod}: BRAK - dodaję puste wartości")
             wyniki[kod] = {
                 'kod': kod,
-                'referencja': '',
+                'referencja': kod,  # Wpisz sam kod jeśli brak danych
                 'kwota': 0,
                 'indeks': -1
             }
@@ -205,7 +214,7 @@ def znajdz_wiersze_sumy(df_sap):
     
     print(f"\n✅ Dane do wklejenia (w kolejności):")
     for i, w in enumerate(wiersze_w_kolejnosci, 1):
-        print(f"   {i}. {w['kod']}: {w['kwota']}")
+        print(f"   {i}. {w['kod']}: Ref='{w['referencja'][:20]}...' Kwota={w['kwota']}")
     
     return wiersze_w_kolejnosci
 
@@ -346,8 +355,8 @@ def main():
     
     ws_glowny = wb[NAZWA_ARKUSZA_GLOWNEGO]
     
-    # Znajdź pierwszy wolny wiersz w kolumnach I i J
-    pierwszy_wolny = 2  # Zakładam że wiersz 1 to nagłówki
+    # Znajdź pierwszy wolny wiersz w kolumnach I i J (tabela zaczyna się od wiersza 4)
+    pierwszy_wolny = 4  # Tabela zaczyna się od wiersza 4
     
     # Szukaj pierwszego pustego wiersza w kolumnie I
     while ws_glowny[f"{KOLUMNA_CEL_REFERENCJA}{pierwszy_wolny}"].value is not None:
