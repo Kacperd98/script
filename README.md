@@ -325,15 +325,37 @@ def main():
     # KROK 4: Otwórz Excel przez COM API (bezpieczne dla tabel!)
     print(f"\n📂 Otwieram plik przez Excel COM API: {plik_dzis}")
     
+    # Sprawdź czy plik istnieje
+    if not os.path.exists(plik_dzis):
+        print(f"❌ BŁĄD: Plik nie istnieje: {plik_dzis}")
+        return
+    
+    # Konwertuj na absolutną ścieżkę
+    sciezka_absolutna = os.path.abspath(plik_dzis)
+    print(f"   Pełna ścieżka: {sciezka_absolutna}")
+    
     # Inicjalizuj COM
     pythoncom.CoInitialize()
     
+    excel = None
+    wb = None
+    
     try:
+        print("   📌 Uruchamiam Excel...")
         excel = win32com.client.Dispatch("Excel.Application")
         excel.Visible = False  # Ukryty Excel
         excel.DisplayAlerts = False  # Bez alertów
         
-        wb = excel.Workbooks.Open(os.path.abspath(plik_dzis))
+        print(f"   📂 Otwieram workbook...")
+        wb = excel.Workbooks.Open(sciezka_absolutna)
+        
+        if wb is None:
+            print("❌ BŁĄD: Nie udało się otworzyć pliku!")
+            if excel:
+                excel.Quit()
+            return
+        
+        print(f"   ✅ Plik otwarty pomyślnie!")
         
         # KROK 5: Sprawdź czy arkusz już istnieje i usuń go
         print(f"\n📊 Przygotowuję arkusz z danymi SAP: {nazwa_dzis}")
@@ -451,10 +473,21 @@ def main():
         
     except Exception as e:
         print(f"\n❌ BŁĄD podczas pracy z Excel: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        
         try:
-            excel.Quit()
+            if wb:
+                wb.Close(SaveChanges=False)
         except:
             pass
+        
+        try:
+            if excel:
+                excel.Quit()
+        except:
+            pass
+        
         raise
     
     finally:
