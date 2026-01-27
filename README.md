@@ -403,6 +403,12 @@ def main():
                     # Konwertuj NaN na None (puste komórki)
                     if pd.isna(value):
                         ws_nowy.Cells(r_idx, c_idx).Value = None
+                    # Konwertuj pandas Timestamp na datetime Python
+                    elif isinstance(value, pd.Timestamp):
+                        ws_nowy.Cells(r_idx, c_idx).Value = value.to_pydatetime()
+                    # Konwertuj numpy typy na Python typy
+                    elif hasattr(value, 'item'):
+                        ws_nowy.Cells(r_idx, c_idx).Value = value.item()
                     else:
                         ws_nowy.Cells(r_idx, c_idx).Value = value
         
